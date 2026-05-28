@@ -38,30 +38,29 @@ class AdSkipperService : NotificationListenerService() {
         val extras = notification.extras ?: return
 
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
-        val artist = extras.getString(Notification.EXTRA_TEXT) ?: ""
+        val text = extras.getString(Notification.EXTRA_TEXT) ?: ""
+        val subText = extras.getString(Notification.EXTRA_SUB_TEXT) ?: ""
+        val bigText = extras.getString(Notification.EXTRA_BIG_TEXT) ?: ""
+        val summaryText = extras.getString(Notification.EXTRA_SUMMARY_TEXT) ?: ""
 
-        Log.d(TAG, "Spotify notification — Title: $title | Artist: $artist")
+        Log.d(TAG, "Spotify notification — Title: $title | Text: $text | Sub: $subText")
 
-        if (isAd(title, artist)) {
+        if (isAd(title, text, subText, bigText, summaryText)) {
             Log.d(TAG, "Ad detected! Restarting Spotify...")
             updateForegroundNotification("Ad detected! Restarting Spotify...")
             restartSpotify()
         }
     }
 
-    private fun isAd(title: String, artist: String): Boolean {
-        val lowerArtist = artist.lowercase().trim()
-        val lowerTitle = title.lowercase().trim()
-
-        // Ignore if title is empty
-        if (lowerTitle.isEmpty()) return false
-
-        // Only flag explicit ad strings
+    private fun isAd(vararg fields: String): Boolean {
         val adIndicators = listOf("advertisement", "spotify free", "audio ad", "sponsored")
-        for (indicator in adIndicators) {
-            if (lowerArtist.contains(indicator) || lowerTitle.contains(indicator)) return true
+        for (field in fields) {
+            if (field.isEmpty()) continue
+            val lower = field.lowercase().trim()
+            for (indicator in adIndicators) {
+                if (lower.contains(indicator)) return true
+            }
         }
-
         return false
     }
 
