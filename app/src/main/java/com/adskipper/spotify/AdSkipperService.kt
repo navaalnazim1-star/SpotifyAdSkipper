@@ -10,6 +10,7 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuRemoteProcess
 
 class AdSkipperService : NotificationListenerService() {
 
@@ -62,13 +63,19 @@ class AdSkipperService : NotificationListenerService() {
         return false
     }
 
+    private fun runShizukuCommand(vararg args: String) {
+        val process = Shizuku::class.java
+            .getDeclaredMethod("newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java)
+            .apply { isAccessible = true }
+            .invoke(null, args, null, null) as Process
+        process.waitFor()
+    }
+
     private fun restartSpotify() {
         handler.post {
             try {
                 if (Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    val command = "am force-stop $SPOTIFY_PACKAGE"
-                    val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", command))
-                    process.waitFor()
+                    runShizukuCommand("am", "force-stop", SPOTIFY_PACKAGE)
                     Log.d(TAG, "Spotify force stopped via Shizuku")
                 } else {
                     Log.e(TAG, "Shizuku not available or permission not granted")
