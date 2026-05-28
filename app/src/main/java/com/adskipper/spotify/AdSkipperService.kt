@@ -10,7 +10,6 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuRemoteProcess
 
 class AdSkipperService : NotificationListenerService() {
 
@@ -19,7 +18,7 @@ class AdSkipperService : NotificationListenerService() {
         private const val SPOTIFY_PACKAGE = "com.spotify.music"
         private const val CHANNEL_ID = "ad_skipper_channel"
         private const val NOTIFICATION_ID = 1
-        private const val AD_RESTART_DELAY = 2000L
+        private const val AD_RESTART_DELAY = 3000L
     }
 
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -54,12 +53,15 @@ class AdSkipperService : NotificationListenerService() {
         val lowerArtist = artist.lowercase().trim()
         val lowerTitle = title.lowercase().trim()
 
-        if (lowerArtist.isEmpty()) return true
+        // Ignore if title is empty
+        if (lowerTitle.isEmpty()) return false
 
+        // Only flag explicit ad strings
         val adIndicators = listOf("advertisement", "spotify free", "audio ad", "sponsored")
         for (indicator in adIndicators) {
             if (lowerArtist.contains(indicator) || lowerTitle.contains(indicator)) return true
         }
+
         return false
     }
 
@@ -78,7 +80,6 @@ class AdSkipperService : NotificationListenerService() {
                     runShizukuCommand("am", "force-stop", SPOTIFY_PACKAGE)
                     Log.d(TAG, "Spotify force stopped via Shizuku")
                 } else {
-                    Log.e(TAG, "Shizuku not available or permission not granted")
                     updateForegroundNotification("Shizuku not available — please check Shizuku app")
                     return@post
                 }
@@ -89,13 +90,9 @@ class AdSkipperService : NotificationListenerService() {
 
         handler.postDelayed({
             try {
-                val launchIntent = packageManager.getLaunchIntentForPackage(SPOTIFY_PACKAGE)
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(launchIntent)
-                    Log.d(TAG, "Spotify relaunched")
-                    updateForegroundNotification("Running — listening for Spotify ads...")
-                }
+                runShizukuCommand("monkey", "-p", SPOTIFY_PACKAGE, "-c", "android.intent.category.LAUNCHER", "1")
+                Log.d(TAG, "Spotify relaunched via Shizuku")
+                updateForegroundNotification("Running — listening for Spotify ads...")
             } catch (e: Exception) {
                 Log.e(TAG, "Error launching Spotify: ${e.message}")
             }
