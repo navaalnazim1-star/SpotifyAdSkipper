@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.SpotifyAdSkipper" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#1DB954</item>
+        <item name="colorPrimaryVariant">#158a3e</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="android:windowBackground">#121212</item>
+    </style>
+</resources>
