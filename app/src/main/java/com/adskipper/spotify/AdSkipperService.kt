@@ -66,7 +66,9 @@ class AdSkipperService : NotificationListenerService() {
         handler.post {
             try {
                 if (Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    Shizuku.newProcess(arrayOf("am", "force-stop", SPOTIFY_PACKAGE), null, null).waitFor()
+                    val command = "am force-stop $SPOTIFY_PACKAGE"
+                    val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", command))
+                    process.waitFor()
                     Log.d(TAG, "Spotify force stopped via Shizuku")
                 } else {
                     Log.e(TAG, "Shizuku not available or permission not granted")
